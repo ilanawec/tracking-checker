@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tracking Checker — Teach Traffic</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      line-height: 1.6;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 24px 0;
+      text-align: center;
+    }
+    header .logo {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #4ade80;
+      margin-bottom: 8px;
+    }
+    header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    header p {
+      margin-top: 8px;
+      color: #94a3b8;
+      font-size: 15px;
+    }
+
+    /* ── Main ── */
+    main {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+
+    /* ── Install box ── */
+    .install-box {
+      background: #fff;
+      border: 2px dashed #cbd5e1;
+      border-radius: 16px;
+      padding: 40px 32px;
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .install-box h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .install-box p {
+      color: #64748b;
+      font-size: 14px;
+      margin-bottom: 28px;
+    }
+
+    /* The bookmarklet drag button */
+    #tt-bm {
+      display: inline-block;
+      background: #16a34a;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 14px 28px;
+      border-radius: 10px;
+      text-decoration: none;
+      cursor: grab;
+      box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+      user-select: none;
+    }
+    #tt-bm:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(22, 163, 74, 0.45);
+    }
+    #tt-bm:active { cursor: grabbing; }
+
+    .drag-hint {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+    .drag-hint strong { color: #64748b; }
+
+    /* ── Steps ── */
+    section h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+    .step {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      background: #0f172a;
+      color: #4ade80;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .step-body { padding-top: 4px; }
+    .step-body strong { display: block; font-size: 14px; margin-bottom: 2px; }
+    .step-body span { font-size: 13px; color: #64748b; }
+
+    /* ── What it checks ── */
+    .checks {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 48px;
+    }
+    .check-item {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .check-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .check-body strong { font-size: 14px; display: block; margin-bottom: 3px; }
+    .check-body span { font-size: 13px; color: #64748b; }
+
+    /* ── Preview ── */
+    .preview-box {
+      background: #0f172a;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 48px;
+    }
+    .preview-box h2 { font-size: 18px; font-weight: 700; color: #f8fafc; margin-bottom: 16px; }
+
+    .mock-panel {
+      background: #0f172a;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      overflow: hidden;
+      max-width: 320px;
+      font-size: 13px;
+      color: #f1f5f9;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    }
+    .mock-header {
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.04);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .mock-header strong { font-size: 14px; }
+    .mock-header small { display: block; font-size: 11px; color: #64748b; margin-top: 1px; }
+    .mock-close { color: #64748b; font-size: 20px; }
+
+    .mock-row {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .mock-row span { font-weight: 500; font-size: 13px; }
+    .badge {
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .badge.green { background: #16a34a; }
+    .badge.red   { background: #dc2626; }
+
+    .mock-note { font-size: 11px; color: #64748b; margin-top: 3px; }
+    .mock-id   { font-size: 11px; font-family: monospace; color: #94a3b8; margin-top: 4px; }
+
+    .mock-footer {
+      padding: 10px 16px;
+      font-size: 11px;
+      color: #475569;
+      text-align: center;
+    }
+
+    /* ── FAQ ── */
+    .faq { margin-bottom: 48px; }
+    .faq-item { border-bottom: 1px solid #e2e8f0; padding: 16px 0; }
+    .faq-item:first-child { border-top: 1px solid #e2e8f0; }
+    .faq-item strong { display: block; font-size: 14px; margin-bottom: 6px; }
+    .faq-item p { font-size: 13px; color: #64748b; }
+
+    footer {
+      text-align: center;
+      font-size: 13px;
+      color: #94a3b8;
+      padding: 32px 24px;
+      border-top: 1px solid #e2e8f0;
+    }
+    footer a { color: #16a34a; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Teach Traffic</div>
+  <h1>Tracking Checker</h1>
+  <p>Instantly see if GTM, GA4 &amp; Google Ads are working on any page</p>
+</header>
+
+<main>
+
+  <!-- ── Install ─────────────────────────────────────────────── -->
+  <div class="install-box">
+    <h2>Install in 5 seconds</h2>
+    <p>Drag this button to your bookmarks bar — then click it on any page to check tracking.</p>
+    <a id="tt-bm" href="#" title="Tracking Checker by Teach Traffic">
+      &#128269; Tracking Checker
+    </a>
+    <p class="drag-hint">
+      <strong>Desktop:</strong> Drag the button above to your bookmarks bar.<br>
+      <strong>Mobile / can't drag?</strong> <a href="#manual">Manual install below</a>.
+    </p>
+  </div>
+
+  <!-- ── How to use ────────────────────────────────────────────── -->
+  <section>
+    <h2>How to use it</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Go to your thank you page</strong>
+          <span>Navigate to the page where your conversion happens — e.g. the page visitors land on after booking, buying, or opting in.</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Click the bookmarklet</strong>
+          <span>Click "Tracking Checker" in your bookmarks bar. A panel appears in the top-right corner of the page.</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>Read the results</strong>
+          <span>Green ✓ Found = that tag is working. Red ✗ Missing = something needs to be fixed.</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <strong>Share a screenshot with your coach</strong>
+          <span>If something is red, take a screenshot and share it in the Teach Traffic community for help.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── What it checks ─────────────────────────────────────────── -->
+  <section>
+    <h2>What it checks</h2>
+    <div class="checks">
+      <div class="check-item">
+        <div class="check-icon">&#128230;</div>
+        <div class="check-body">
+          <strong>Google Tag Manager</strong>
+          <span>Confirms your GTM container is installed and loaded on this page. Shows your container ID (GTM-XXXXX).</span>
+        </div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon">&#128202;</div>
+        <div class="check-body">
+          <strong>GA4 Analytics</strong>
+          <span>Checks if GA4 is installed <em>and</em> whether a hit was actually sent when the page loaded. Shows your Measurement ID (G-XXXXX).</span>
+        </div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon">&#128176;</div>
+        <div class="check-body">
+          <strong>Google Ads Conversion</strong>
+          <span>Checks if a conversion ping was sent to Google Ads. This is the most important check for your thank you page — if this is red, your conversions aren't being reported.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Preview ─────────────────────────────────────────────────── -->
+  <div class="preview-box">
+    <h2>What you'll see</h2>
+    <div class="mock-panel">
+      <div class="mock-header">
+        <div>
+          <strong>Tracking Checker</strong>
+          <small>by Teach Traffic</small>
+        </div>
+        <span class="mock-close">&times;</span>
+      </div>
+      <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07)">
+        <div class="mock-row" style="padding:0;border:none">
+          <span>Google Tag Manager</span>
+          <span class="badge green">&#10003; Found</span>
+        </div>
+        <div class="mock-id">GTM-XXXXXX</div>
+      </div>
+      <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07)">
+        <div class="mock-row" style="padding:0;border:none">
+          <span>GA4 Analytics</span>
+          <span class="badge green">&#10003; Found</span>
+        </div>
+        <div class="mock-id">G-XXXXXXXXXX</div>
+        <div class="mock-note">Hit confirmed via network ✓</div>
+      </div>
+      <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07)">
+        <div class="mock-row" style="padding:0;border:none">
+          <span>Google Ads Conversion</span>
+          <span class="badge red">&#10007; Missing</span>
+        </div>
+        <div class="mock-note" style="color:#f87171">No conversion ping detected on this page</div>
+      </div>
+      <div class="mock-footer">Click the bookmarklet again to close</div>
+    </div>
+  </div>
+
+  <!-- ── FAQ ────────────────────────────────────────────────────── -->
+  <section class="faq">
+    <h2>Common questions</h2>
+    <div class="faq-item">
+      <strong>GTM shows ✓ Found but GA4 / Google Ads shows ✗ Missing — what does that mean?</strong>
+      <p>GTM is installed, but the tags inside it aren't firing correctly on this page. Check your trigger conditions in GTM — they may not be matching this URL.</p>
+    </div>
+    <div class="faq-item">
+      <strong>Google Ads shows "Tag present in GTM — no ping seen yet" — is that a problem?</strong>
+      <p>The tag exists in your GTM container but didn't fire when this page loaded. This usually means the trigger isn't set up correctly, or you're previewing the page in GTM debug mode which blocks some tags.</p>
+    </div>
+    <div class="faq-item">
+      <strong>GA4 shows "Tag loaded — no hit captured yet"</strong>
+      <p>GA4's script is on the page but no measurement hit was recorded in the network. This can happen with ad blockers, or if the GA4 Configuration tag has a trigger other than "All Pages".</p>
+    </div>
+    <div class="faq-item">
+      <strong>Does this work on password-protected pages?</strong>
+      <p>Yes! Unlike URL-based checkers, this bookmarklet runs directly in your browser, so it works on any page you can view — including pages behind a login.</p>
+    </div>
+    <div class="faq-item">
+      <strong>Does it send any of my data anywhere?</strong>
+      <p>No. The bookmarklet runs entirely in your browser. Nothing is sent to Teach Traffic's servers — it's all local JavaScript reading your own page.</p>
+    </div>
+    <div class="faq-item">
+      <strong id="manual">I can't drag the button — how do I install it manually?</strong>
+      <p>Right-click your bookmarks bar and choose "Add bookmark" or "Add page". Paste the bookmarklet URL (which starts with <code>javascript:</code>) into the URL field and name it "Tracking Checker".</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Made for <a href="https://teachtraffic.com" target="_blank">Teach Traffic</a> members &mdash; by Ilana Wechsler
+</footer>
+
+<script>
+  // ─── Bookmarklet source ────────────────────────────────────────────────────
+  // This function is stringified and injected as the bookmarklet href.
+  // Written this way so the source is readable and the href is always in sync.
+
+  var bookmarkletFn = function () {
+    var existing = document.getElementById('tt-tc');
+    if (existing) { existing.remove(); return; }
+
+    var gtm  = { ok: false, ids: [] };
+    var ga4  = { fired: false, installed: false, ids: [] };
+    var gads = { fired: false, ids: [] };
+
+    // GTM: google_tag_manager object
+    if (window.google_tag_manager) {
+      gtm.ok = true;
+      Object.keys(window.google_tag_manager).forEach(function (k) {
+        if (/^GTM-/.test(k) && gtm.ids.indexOf(k) < 0)  gtm.ids.push(k);
+        if (/^G-/.test(k))  { ga4.installed = true; if (ga4.ids.indexOf(k) < 0) ga4.ids.push(k); }
+        if (/^AW-/.test(k) && gads.ids.indexOf(k) < 0) gads.ids.push(k);
+      });
+    }
+
+    // GTM: <script> tag
+    var gtmS = document.querySelector('script[src*="googletagmanager.com/gtm.js"]');
+    if (gtmS) {
+      gtm.ok = true;
+      var ms = gtmS.src.match(/[?&]id=(GTM-[^&]+)/);
+      if (ms && gtm.ids.indexOf(ms[1]) < 0) gtm.ids.push(ms[1]);
+    }
+
+    // GTM: noscript iframe
+    var gtmN = document.querySelector('iframe[src*="googletagmanager.com/ns.html"]');
+    if (gtmN) {
+      gtm.ok = true;
+      var mn = gtmN.src.match(/[?&]id=(GTM-[^&]+)/);
+      if (mn && gtm.ids.indexOf(mn[1]) < 0) gtm.ids.push(mn[1]);
+    }
+
+    // GTM: dataLayer fallback
+    if (window.dataLayer && !gtm.ok) gtm.ok = true;
+
+    // GA4: gtag script tag
+    document.querySelectorAll('script[src*="gtag/js"]').forEach(function (s) {
+      ga4.installed = true;
+      var m = s.src.match(/[?&]id=(G-[^&]+)/);
+      if (m && ga4.ids.indexOf(m[1]) < 0) ga4.ids.push(m[1]);
+    });
+
+    // Network requests
+    try {
+      performance.getEntriesByType('resource').forEach(function (r) {
+        var u = r.name;
+        if (u.indexOf('analytics.google.com/g/collect') > -1 ||
+            u.indexOf('google-analytics.com/g/collect') > -1) {
+          ga4.fired = true;
+        }
+        if (u.indexOf('googleadservices.com/pagead/conversion') > -1 ||
+            u.indexOf('google.com/pagead/conversion') > -1) {
+          gads.fired = true;
+          var cm = u.match(/\/conversion\/(\d+)/);
+          if (cm) { var aid = 'AW-' + cm[1]; if (gads.ids.indexOf(aid) < 0) gads.ids.push(aid); }
+        }
+      });
+    } catch (e) { /* security error */ }
+
+    // ── Build panel ──
+    var p = document.createElement('div');
+    p.id = 'tt-tc';
+    p.style.cssText = 'position:fixed;top:20px;right:20px;z-index:2147483647;width:320px;' +
+      'background:#0f172a;color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;' +
+      'font-size:13px;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.6);overflow:hidden;';
+
+    function bd(ok) {
+      return '<span style="background:' + (ok ? '#16a34a' : '#dc2626') +
+        ';color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">' +
+        (ok ? '&#10003; Found' : '&#10007; Missing') + '</span>';
+    }
+    function ch(ids) {
+      return ids && ids.length
+        ? '<div style="margin-top:5px;font-size:11px;font-family:monospace;color:#94a3b8;">' + ids.join(' &bull; ') + '</div>'
+        : '';
+    }
+    function nt(t) {
+      return t ? '<div style="margin-top:3px;font-size:11px;color:#64748b;">' + t + '</div>' : '';
+    }
+    function rw(label, ok, ids, noteText) {
+      return '<div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07)">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<span style="font-weight:500">' + label + '</span>' + bd(ok) +
+        '</div>' + ch(ids) + nt(noteText) + '</div>';
+    }
+
+    var ga4Ok    = ga4.fired || ga4.installed;
+    var ga4Note  = ga4.fired ? 'Hit confirmed via network &#10003;' : ga4.installed ? 'Tag loaded &#8212; no hit captured yet' : '';
+    var gadsOk   = gads.fired || gads.ids.length > 0;
+    var gadsNote = gads.fired ? 'Conversion ping confirmed &#10003;' : gads.ids.length ? 'Tag in GTM &#8212; no ping seen yet' : '';
+    var gtmNote  = gtm.ok && !gtm.ids.length ? 'Installed (ID not found in DOM)' : '';
+
+    p.innerHTML =
+      '<div style="padding:14px 16px;background:rgba(255,255,255,0.04);display:flex;justify-content:space-between;align-items:center">' +
+        '<div><strong style="font-size:14px">Tracking Checker</strong>' +
+        '<div style="font-size:11px;color:#64748b;margin-top:1px">by Teach Traffic</div></div>' +
+        '<button id="tt-tc-x" style="background:none;border:none;color:#64748b;font-size:22px;cursor:pointer;line-height:1;padding:0">&times;</button>' +
+      '</div>' +
+      rw('Google Tag Manager', gtm.ok, gtm.ids, gtmNote) +
+      rw('GA4 Analytics', ga4Ok, ga4.ids, ga4Note) +
+      rw('Google Ads Conversion', gadsOk, gads.ids, gadsNote) +
+      '<div style="padding:10px 16px;font-size:11px;color:#475569;text-align:center">Click bookmarklet again to close</div>';
+
+    document.body.appendChild(p);
+    document.getElementById('tt-tc-x').onclick = function () { p.remove(); };
+  };
+
+  // ─── Set the bookmarklet href ──────────────────────────────────────────────
+  document.getElementById('tt-bm').href = 'javascript:(' + bookmarkletFn.toString() + ')();void 0;';
+</script>
+
+</body>
+</html>
