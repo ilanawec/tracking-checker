@@ -193,6 +193,8 @@
     .badge { border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 700; color: #fff; }
     .badge.green { background: #16a34a; }
     .badge.red   { background: #dc2626; }
+    .badge.amber { background: #d97706; }
+    .badge.grey  { background: #475569; }
     .mock-note { font-size: 11px; color: #64748b; margin-top: 3px; }
     .mock-id   { font-size: 11px; font-family: monospace; color: #94a3b8; margin-top: 4px; }
     .mock-footer {
@@ -350,7 +352,7 @@
         </div>
         <div class="mock-note" style="color:#f87171">No conversion ping detected on this page</div>
       </div>
-      <div class="mock-footer">Click the bookmarklet again to close</div>
+      <div class="mock-footer">&#8987; Scanning network&hellip; (2s) &middot; click again to close</div>
     </div>
   </div>
 
@@ -396,42 +398,29 @@
 
 var BOOKMARKLET_CODE = '(function(){' +
   'var e=document.getElementById("tt-tc");if(e){e.remove();return}' +
-  'var g={ok:false,ids:[]},a={fired:false,ok:false,ids:[]},c={fired:false,ids:[]};' +
+  'var g={ok:false,ids:[]},a={ok:false,fired:false,ids:[]},c={fired:false,ids:[]};' +
 
+  // ── DOM checks (instant) ──
   // GTM: google_tag_manager object
   'if(window.google_tag_manager){g.ok=true;Object.keys(window.google_tag_manager).forEach(function(k){' +
     'if(/^GTM-/.test(k)&&g.ids.indexOf(k)<0)g.ids.push(k);' +
     'if(/^G-/.test(k)){a.ok=true;if(a.ids.indexOf(k)<0)a.ids.push(k)}' +
     'if(/^AW-/.test(k)&&c.ids.indexOf(k)<0)c.ids.push(k)' +
   '})}' +
-
   // GTM: script tag
   'var gs=document.querySelector(\'script[src*="googletagmanager.com/gtm.js"]\');' +
   'if(gs){g.ok=true;var ms=gs.src.match(/[?&]id=(GTM-[^&]+)/);if(ms&&g.ids.indexOf(ms[1])<0)g.ids.push(ms[1])}' +
-
   // GTM: noscript iframe
   'var gi=document.querySelector(\'iframe[src*="googletagmanager.com/ns.html"]\');' +
   'if(gi){g.ok=true;var mi=gi.src.match(/[?&]id=(GTM-[^&]+)/);if(mi&&g.ids.indexOf(mi[1])<0)g.ids.push(mi[1])}' +
-
   // GTM: dataLayer fallback
   'if(window.dataLayer&&!g.ok)g.ok=true;' +
-
   // GA4: gtag script tag
   'document.querySelectorAll(\'script[src*="gtag/js"]\').forEach(function(t){' +
     'a.ok=true;var m=t.src.match(/[?&]id=(G-[^&]+)/);if(m&&a.ids.indexOf(m[1])<0)a.ids.push(m[1])' +
   '});' +
 
-  // Network requests
-  'try{performance.getEntriesByType("resource").forEach(function(r){' +
-    'var u=r.name;' +
-    'if(u.indexOf("analytics.google.com/g/collect")>-1||u.indexOf("google-analytics.com/g/collect")>-1)a.fired=true;' +
-    'if(u.indexOf("googleadservices.com/pagead/conversion")>-1||u.indexOf("google.com/pagead/conversion")>-1){' +
-      'c.fired=true;var cm=u.match(/\\/conversion\\/(\\d+)/);' +
-      'if(cm){var aid="AW-"+cm[1];if(c.ids.indexOf(aid)<0)c.ids.push(aid)}' +
-    '}' +
-  '})}catch(err){}' +
-
-  // Build panel
+  // ── Helper functions ──
   'var p=document.createElement("div");p.id="tt-tc";' +
   'p.style.cssText="position:fixed;top:20px;right:20px;z-index:2147483647;width:320px;' +
     'background:#0f172a;color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;' +
@@ -439,25 +428,58 @@ var BOOKMARKLET_CODE = '(function(){' +
 
   'function bd(ok){return\'<span style="background:\'+(ok?"#16a34a":"#dc2626")+\';color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">\'+(ok?"\u2713 Found":"\u2717 Missing")+"</span>"}' +
   'function bdW(){return\'<span style="background:#d97706;color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">\u26a0 Not fired</span>\'}' +
+  'function bdS(){return\'<span style="background:#475569;color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">\u23f3 Scanning\u2026</span>\'}' +
   'function ch(ids){return ids&&ids.length?\'<div style="margin-top:5px;font-size:11px;font-family:monospace;color:#94a3b8;">\'+ids.join(" \u2022 ")+"</div>":""}' +
   'function nt(t){return t?\'<div style="margin-top:3px;font-size:11px;color:#64748b;">\'+t+"</div>":""}' +
   'function rw(l,ok,ids,t){return\'<div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.07)"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:500">\'+l+"</span>"+bd(ok)+"</div>"+ch(ids)+nt(t)+"</div>"}' +
 
-  'var ga4Ok=a.fired||a.ok;' +
-  'var ga4N=a.fired?"Hit confirmed \u2713":a.ok?"Tag loaded \u2014 no hit captured yet":"";' +
+  // ── Build panel with immediate DOM results; network rows show "Scanning…" ──
   'var gtN=g.ok&&!g.ids.length?"Installed (ID not found in DOM)":"";' +
-  'var gadsBadge=c.fired?bd(true):c.ids.length?bdW():bd(false);' +
-  'var gaN=c.fired?"Conversion ping confirmed \u2713":c.ids.length?"Tag in GTM \u2014 didn\'t fire on this page":"";' +
-  'var gadsRow=\'<div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.07)"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:500">Google Ads Conversion</span>\'+gadsBadge+"</div>"+ch(c.ids)+nt(gaN)+"</div>";' +
 
-  'p.innerHTML=\'<div style="padding:14px 16px;background:rgba(255,255,255,.04);display:flex;justify-content:space-between;align-items:center"><div><strong style="font-size:14px">Tracking Checker</strong><div style="font-size:11px;color:#64748b;margin-top:1px">by Teach Traffic</div></div><button id="tt-tc-x" style="background:none;border:none;color:#64748b;font-size:22px;cursor:pointer;line-height:1;padding:0">\u00d7</button></div>\'+' +
+  'p.innerHTML=' +
+    '\'<div style="padding:14px 16px;background:rgba(255,255,255,.04);display:flex;justify-content:space-between;align-items:center"><div><strong style="font-size:14px">Tracking Checker</strong><div style="font-size:11px;color:#64748b;margin-top:1px">by Teach Traffic</div></div><button id="tt-tc-x" style="background:none;border:none;color:#64748b;font-size:22px;cursor:pointer;line-height:1;padding:0">\u00d7</button></div>\'+' +
     'rw("Google Tag Manager",g.ok,g.ids,gtN)+' +
-    'rw("GA4 Analytics",ga4Ok,a.ids,ga4N)+' +
-    'gadsRow+' +
-    '\'<div style="padding:10px 16px;font-size:11px;color:#475569;text-align:center">Click bookmarklet again to close</div>\';' +
+    // GA4 row — badge + note are updatable via IDs
+    '\'<div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.07)"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:500">GA4 Analytics</span><span id="tt-ga4-b">\'+( a.ok?bdS():bd(false) )+\'</span></div>\'+ch(a.ids)+\'<div id="tt-ga4-n">\'+nt(a.ok?"Checking for hits\u2026":"")+\'</div></div>\'+' +
+    // Google Ads row — badge + note are updatable via IDs
+    '\'<div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.07)"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:500">Google Ads Conversion</span><span id="tt-ga-b">\'+( c.ids.length?bdS():bd(false) )+\'</span></div>\'+ch(c.ids)+\'<div id="tt-ga-n">\'+nt(c.ids.length?"Checking for conversion ping\u2026":"")+\'</div></div>\'+' +
+    '\'<div style="padding:10px 16px;font-size:11px;color:#475569;text-align:center">\u23f3 Scanning network\u2026 (2s) \u00b7 click again to close</div>\';' +
 
   'document.body.appendChild(p);' +
   'document.getElementById("tt-tc-x").onclick=function(){p.remove()};' +
+
+  // ── Network check after 2.5s — GTM tags have had time to fire ──
+  'function chkNet(){' +
+    'try{performance.getEntriesByType("resource").forEach(function(r){' +
+      'var u=r.name;' +
+      // GA4 endpoints (including regional)
+      'if(!a.fired&&(' +
+        'u.indexOf("analytics.google.com/g/collect")>-1||' +
+        'u.indexOf("google-analytics.com/g/collect")>-1||' +
+        'u.indexOf("region1.analytics.google.com/g/collect")>-1||' +
+        'u.indexOf("region1.google-analytics.com/g/collect")>-1' +
+      '))a.fired=true;' +
+      // Google Ads conversion endpoints
+      'if(!c.fired&&(' +
+        'u.indexOf("googleadservices.com/pagead/conversion")>-1||' +
+        'u.indexOf("google.com/pagead/conversion")>-1||' +
+        'u.indexOf("googleads.g.doubleclick.net/conversion")>-1||' +
+        'u.indexOf("google.com/pagead/1p-conversion")>-1' +
+      ')){c.fired=true;var cm=u.match(/\\/conversion\\/([^/?]+)/);if(cm){var aid="AW-"+cm[1];if(c.ids.indexOf(aid)<0)c.ids.push(aid)}}' +
+    '})}catch(x){}' +
+    // Update GA4 badge + note
+    'var gb=document.getElementById("tt-ga4-b"),gn=document.getElementById("tt-ga4-n");' +
+    'if(gb)gb.innerHTML=a.fired?bd(true):bd(a.ok);' +
+    'if(gn)gn.innerHTML=nt(a.fired?"Hit confirmed \u2713":a.ok?"Tag loaded \u2014 no hit detected":"");' +
+    // Update Google Ads badge + note
+    'var ab=document.getElementById("tt-ga-b"),an=document.getElementById("tt-ga-n");' +
+    'if(ab)ab.innerHTML=c.fired?bd(true):c.ids.length?bdW():bd(false);' +
+    'if(an)an.innerHTML=nt(c.fired?"Conversion ping confirmed \u2713":c.ids.length?"Tag in GTM \u2014 didn\'t fire on this page":"");' +
+    // Update footer
+    'var ft=p.querySelector("div:last-child");' +
+    'if(ft)ft.innerHTML="Click bookmarklet again to close";' +
+  '}' +
+  'setTimeout(chkNet,2500);' +
 '})();';
 
 // ─── Set the drag button href ──────────────────────────────────────────────
