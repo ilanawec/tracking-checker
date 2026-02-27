@@ -459,12 +459,13 @@ var BOOKMARKLET_CODE = '(function(){' +
         'u.indexOf("region1.analytics.google.com/g/collect")>-1||' +
         'u.indexOf("region1.google-analytics.com/g/collect")>-1' +
       '))a.fired=true;' +
-      // Google Ads conversion endpoints
+      // Google Ads conversion endpoints — trailing slash is critical:
+      // "pagead/conversion/" matches the real pixel (/conversion/123456789/?...)
+      // but NOT conversion_async.js (/conversion_async.js) which loads on every page
       'if(!c.fired&&(' +
-        'u.indexOf("googleadservices.com/pagead/conversion")>-1||' +
-        'u.indexOf("google.com/pagead/conversion")>-1||' +
-        'u.indexOf("googleads.g.doubleclick.net/conversion")>-1||' +
-        'u.indexOf("google.com/pagead/1p-conversion")>-1' +
+        'u.indexOf("googleadservices.com/pagead/conversion/")>-1||' +
+        'u.indexOf("google.com/pagead/conversion/")>-1||' +
+        'u.indexOf("google.com/pagead/1p-conversion/")>-1' +
       ')){c.fired=true;var cm=u.match(/\\/conversion\\/([^/?]+)/);if(cm){var aid="AW-"+cm[1];if(c.ids.indexOf(aid)<0)c.ids.push(aid)}}' +
     '})}catch(x){}' +
     // Update GA4 badge + note
