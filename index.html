@@ -459,10 +459,11 @@ var BOOKMARKLET_CODE = '(function(){' +
         'u.indexOf("region1.analytics.google.com/g/collect")>-1||' +
         'u.indexOf("region1.google-analytics.com/g/collect")>-1' +
       '))a.fired=true;' +
-      // Google Ads conversion endpoints — trailing slash is critical:
-      // "pagead/conversion/" matches the real pixel (/conversion/123456789/?...)
-      // but NOT conversion_async.js (/conversion_async.js) which loads on every page
-      'if(!c.fired&&(' +
+      // Google Ads conversion endpoints.
+      // Real conversion events always include guid=ON in the query string.
+      // Remarketing/audience tags fire on every page with ?random=XXXX and no guid=ON.
+      // Requiring guid=ON filters out the remarketing hits and matches only real conversions.
+      'if(!c.fired&&u.indexOf("guid=ON")>-1&&(' +
         'u.indexOf("googleadservices.com/pagead/conversion/")>-1||' +
         'u.indexOf("google.com/pagead/conversion/")>-1||' +
         'u.indexOf("google.com/pagead/1p-conversion/")>-1' +
