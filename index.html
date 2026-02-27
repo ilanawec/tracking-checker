@@ -398,7 +398,7 @@
 
 var BOOKMARKLET_CODE = '(function(){' +
   'var e=document.getElementById("tt-tc");if(e){e.remove();return}' +
-  'var g={ok:false,ids:[]},a={ok:false,fired:false,ids:[]},c={fired:false,ids:[]};' +
+  'var g={ok:false,ids:[]},a={ok:false,fired:false,ids:[]},c={fired:false,ids:[],url:""};' +
 
   // ── DOM checks (instant) ──
   // GTM: google_tag_manager object
@@ -466,7 +466,7 @@ var BOOKMARKLET_CODE = '(function(){' +
         'u.indexOf("googleadservices.com/pagead/conversion/")>-1||' +
         'u.indexOf("google.com/pagead/conversion/")>-1||' +
         'u.indexOf("google.com/pagead/1p-conversion/")>-1' +
-      ')){c.fired=true;var cm=u.match(/\\/conversion\\/([^/?]+)/);if(cm){var aid="AW-"+cm[1];if(c.ids.indexOf(aid)<0)c.ids.push(aid)}}' +
+      ')){c.fired=true;c.url=u;var cm=u.match(/\\/conversion\\/([^/?]+)/);if(cm){var aid="AW-"+cm[1];if(c.ids.indexOf(aid)<0)c.ids.push(aid)}}' +
     '})}catch(x){}' +
     // Update GA4 badge + note
     'var gb=document.getElementById("tt-ga4-b"),gn=document.getElementById("tt-ga4-n");' +
@@ -475,7 +475,7 @@ var BOOKMARKLET_CODE = '(function(){' +
     // Update Google Ads badge + note
     'var ab=document.getElementById("tt-ga-b"),an=document.getElementById("tt-ga-n");' +
     'if(ab)ab.innerHTML=c.fired?bd(true):c.ids.length?bdW():bd(false);' +
-    'if(an)an.innerHTML=nt(c.fired?"Conversion ping confirmed \u2713":c.ids.length?"Tag in GTM \u2014 didn\'t fire on this page":"");' +
+    'if(an)an.innerHTML=nt(c.fired?"Conversion ping confirmed \u2713 \u00b7 "+c.url.replace(/^https?:\\/\\//,"").substring(0,60):c.ids.length?"Tag in GTM \u2014 didn\'t fire on this page":"");' +
     // Update footer
     'var ft=p.querySelector("div:last-child");' +
     'if(ft)ft.innerHTML="Click bookmarklet again to close";' +
